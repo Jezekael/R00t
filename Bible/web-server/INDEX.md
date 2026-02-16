@@ -1,6 +1,15 @@
 # Web-Server
 
-- [SQL Injection (SQLi)](sqli/INDEX.md)
-- [Server-Side Template Injection (SSTI)](ssti/INDEX.md)
-- [File Inclusion (LFI/RFI)](file-inclusion/INDEX.md)
-- [Other Injections](injections/INDEX.md)
+## Injection
+- [SQL Injection](sqli/sql-injection.md)
+- [Server-Side Template Injection](ssti/ssti.md)
+- [Command injection](injection/command-injection.md)
+- [LDAP injection](auth/ldap-injection.md)
+
+## Files & paths
+- [Path traversal / LFI](files/path-traversal-lfi.md)
+- [File upload security](files/file-upload-security.md)
+
+## Redirects & headers
+- [Open redirect](redirects/open-redirect.md)
+- [HTTP header injection (CRLF)](redirects/http-header-injection-crlf.md)

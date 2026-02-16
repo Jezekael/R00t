@@ -1,4 +1,3 @@
 # Reverse Engineering
 
-## Sub-categories
-- (add links here)
+- [JavaScript obfuscation](js/javascript-obfuscation.md)
