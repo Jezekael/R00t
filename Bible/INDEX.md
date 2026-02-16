@@ -15,3 +15,12 @@
 
 ## Templates
 - [Cheat Sheet Template](_templates/cheatsheet-template.md)
+
+## Other Categories
+- [Reverse Engineering](reverse/INDEX.md)
+- [Mobile](mobile/INDEX.md)
+- [OSINT](osint/INDEX.md)
+- [Cryptography](crypto/INDEX.md)
+- [Forensics](forensics/INDEX.md)
+- [Cloud](cloud/INDEX.md)
+- [Network](network/INDEX.md)

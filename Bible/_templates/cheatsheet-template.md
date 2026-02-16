@@ -1,7 +1,5 @@
 # NAME
-**Category:** (Web-Client / Web-Server)  
-**Difficulty (subjective):** (Easy/Med/Hard)  
-**Related challenges:** (Root-Me / HTB / etc.)
+**Category:**    
 
 ## What it is
 (2–5 lines definition.)
@@ -30,3 +28,6 @@
 
 ## Resources
 - (OWASP + high-quality references)
+
+**Related challenges:** 
+- (Root-Me / HTB / etc.)
